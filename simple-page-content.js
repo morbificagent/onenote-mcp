@@ -83,12 +83,10 @@ async function getPageContent() {
       
       const content = await response.text();
       console.log(`Content received! Length: ${content.length} characters`);
-      console.log(`Content preview:\n${content.substring(0, 500)}...`);
+      console.log(`Content preview (first 100 chars): ${content.substring(0, 100).replace(/\n/g, ' ')}...`);
       
-      // Save the content to a file for inspection
-      const outputFile = path.join(__dirname, 'page-content.html');
-      fs.writeFileSync(outputFile, content);
-      console.log(`Full content saved to: ${outputFile}`);
+      // Don't save content to file - just confirm it worked
+      console.log("Content retrieval successful! Privacy preserved - not saving to disk.");
     } catch (error) {
       console.error("Error fetching content:", error);
     }

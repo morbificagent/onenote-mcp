@@ -384,11 +384,6 @@ server.tool(
         const content = await response.text();
         console.error(`Content received! Length: ${content.length} characters`);
         
-        // For debugging
-        const outputFile = path.join(__dirname, 'page-content.html');
-        fs.writeFileSync(outputFile, content);
-        console.error(`Full content saved to: ${outputFile}`);
-        
         // Extract some useful text content using a simple regex
         let textContent = content;
         try {
@@ -400,21 +395,18 @@ server.tool(
           console.error("Error parsing HTML:", parseError);
         }
         
-        // Create response with both HTML and extracted text
-        const pageData = {
-          id: targetPage.id,
-          title: targetPage.title,
-          createdDateTime: targetPage.createdDateTime,
-          lastModifiedDateTime: targetPage.lastModifiedDateTime,
-          htmlContent: content,
-          textContent: textContent
-        };
-        
+        // Return the page content with metadata - do NOT log or save the content
         return {
           content: [
             {
               type: "text",
-              text: JSON.stringify(pageData, null, 2)
+              text: JSON.stringify({
+                id: targetPage.id,
+                title: targetPage.title,
+                createdDateTime: targetPage.createdDateTime,
+                lastModifiedDateTime: targetPage.lastModifiedDateTime,
+                content: content
+              }, null, 2)
             }
           ]
         };
