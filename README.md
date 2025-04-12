@@ -78,7 +78,9 @@ This will install all required packages including the Microsoft Graph client lib
 Run the authentication script:
 
 ```bash
-node authenticate.js
+npm run auth
+# or directly:
+# node authenticate.js
 ```
 
 The script will output something like:
@@ -102,7 +104,9 @@ After successful authentication, an access token will be saved to `.access-token
 Verify that you can access your OneNote data by listing your notebooks:
 
 ```bash
-node simple-onenote.js
+npm run list-notebooks
+# or directly:
+# node simple-onenote.js
 ```
 
 You should see a list of your OneNote notebooks.
@@ -113,13 +117,16 @@ Now that you're authenticated, you can run the other scripts:
 
 ```bash
 # List sections in your first notebook
-node list-sections.js
+npm run list-sections
+# or: node list-sections.js
 
 # List pages in the first section of your first notebook
-node list-pages.js
+npm run list-pages
+# or: node list-pages.js
 
 # Create a new page in the first section of your first notebook
-node create-page.js
+npm run create-page
+# or: node create-page.js
 ```
 
 ### Step 7: Running the MCP Server (Optional)
@@ -127,7 +134,9 @@ node create-page.js
 If you want to use the MCP server with AI assistants:
 
 ```bash
-node onenote-mcp.mjs
+npm start
+# or directly:
+# node onenote-mcp.mjs
 ```
 
 This will start a server that AI systems can interact with using the Model Context Protocol.
