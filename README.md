@@ -20,7 +20,29 @@ All of this happens directly through the AI interface without you having to swit
 
 1. Clone this repository and follow the installation steps below
 2. Start the MCP server: `npm start`
-3. In Cursor, you can now interact with your OneNote data using natural language:
+3. Register the server in Cursor:
+   - Open Cursor preferences (Cmd+, on Mac or Ctrl+, on Windows)
+   - Go to the "MCP" tab
+   - Add a new MCP server with these settings:
+     - Name: `onenote` 
+     - Command: `node`
+     - Args: `["/path/to/your/onenote-mcp.mjs"]` (use absolute path)
+
+   Here's the complete JSON configuration example:
+   ```json
+   {
+     "mcpServers": {
+       "onenote": {
+         "command": "node",
+         "args": ["/absolute/path/to/your/onenote-mcp.mjs"],
+         "env": {}
+       }
+     }
+   }
+   ```
+   
+4. Restart Cursor
+5. In Cursor, you can now interact with your OneNote data using natural language:
 
 ```
 Can you show me my OneNote notebooks?
@@ -28,11 +50,30 @@ Create a new page in my first notebook with a summary of this conversation
 Find notes related to "project planning" in my OneNote
 ```
 
+The first time you ask about OneNote, the AI will guide you through the authentication process.
+
 ### Setup for Claude Desktop (or other MCP-compatible assistants)
 
 1. Clone this repository and follow the installation steps below
 2. Start the MCP server: `npm start`
-3. In the Claude Desktop settings, add the OneNote MCP server
+3. In the Claude Desktop settings, add the OneNote MCP server:
+   - Name: `onenote`
+   - Command: `node`
+   - Args: `["/path/to/your/onenote-mcp.mjs"]` (use absolute path)
+   
+   JSON configuration example:
+   ```json
+   {
+     "mcpServers": {
+       "onenote": {
+         "command": "node",
+         "args": ["/absolute/path/to/your/onenote-mcp.mjs"],
+         "env": {}
+       }
+     }
+   }
+   ```
+   
 4. You can now ask Claude to interact with your OneNote data
 
 ## Features
