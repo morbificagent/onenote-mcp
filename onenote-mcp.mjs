@@ -321,37 +321,140 @@ server.tool(
   "Get the content of a page",
   async (params) => {
     try {
+      console.error("GetPage called with params:", params);
       await ensureGraphClient();
-      // Get sections first
-      const sectionsResponse = await graphClient.api(`/me/onenote/sections`).get();
       
-      if (sectionsResponse.value.length === 0) {
-        throw new Error("No sections found");
+      // First, list all pages to find the one we want
+      const pagesResponse = await graphClient.api('/me/onenote/pages').get();
+      console.error("Got", pagesResponse.value.length, "pages");
+      
+      let targetPage;
+      
+      // If a page ID is provided, use it to find the page
+      if (params.random_string && params.random_string.length > 0) {
+        const pageId = params.random_string;
+        console.error("Looking for page with ID:", pageId);
+        
+        // Look for exact match first
+        targetPage = pagesResponse.value.find(p => p.id === pageId);
+        
+        // If no exact match, try matching by title
+        if (!targetPage) {
+          console.error("No exact match, trying title search");
+          targetPage = pagesResponse.value.find(p => 
+            p.title && p.title.toLowerCase().includes(params.random_string.toLowerCase())
+          );
+        }
+        
+        // If still no match, try partial ID match
+        if (!targetPage) {
+          console.error("No title match, trying partial ID match");
+          targetPage = pagesResponse.value.find(p => 
+            p.id.includes(pageId) || pageId.includes(p.id)
+          );
+        }
+      } else {
+        // If no ID provided, use the first page
+        console.error("No ID provided, using first page");
+        targetPage = pagesResponse.value[0];
       }
       
-      // Use the first section
-      const sectionId = sectionsResponse.value[0].id;
-      const pagesResponse = await graphClient.api(`/me/onenote/sections/${sectionId}/pages`).get();
-      
-      if (pagesResponse.value.length === 0) {
-        throw new Error("No pages found in the section");
+      if (!targetPage) {
+        throw new Error("Page not found");
       }
       
-      // Use the first page
-      const pageId = pagesResponse.value[0].id;
-      const response = await graphClient.api(`/me/onenote/pages/${pageId}/content`).get();
+      console.error("Target page found:", targetPage.title);
+      console.error("Page ID:", targetPage.id);
       
-      return { 
+      try {
+        // Use the proven approach from our simple script
+        const url = `https://graph.microsoft.com/v1.0/me/onenote/pages/${targetPage.id}/content`;
+        console.error("Fetching content from:", url);
+        
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status} ${response.statusText}`);
+        }
+        
+        const content = await response.text();
+        console.error(`Content received! Length: ${content.length} characters`);
+        
+        // For debugging
+        const outputFile = path.join(__dirname, 'page-content.html');
+        fs.writeFileSync(outputFile, content);
+        console.error(`Full content saved to: ${outputFile}`);
+        
+        // Extract some useful text content using a simple regex
+        let textContent = content;
+        try {
+          // Remove HTML tags for a plain text version
+          textContent = content.replace(/<[^>]*>?/gm, ' ')
+                              .replace(/\s+/g, ' ')
+                              .trim();
+        } catch (parseError) {
+          console.error("Error parsing HTML:", parseError);
+        }
+        
+        // Create response with both HTML and extracted text
+        const pageData = {
+          id: targetPage.id,
+          title: targetPage.title,
+          createdDateTime: targetPage.createdDateTime,
+          lastModifiedDateTime: targetPage.lastModifiedDateTime,
+          htmlContent: content,
+          textContent: textContent
+        };
+        
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(pageData, null, 2)
+            }
+          ]
+        };
+      } catch (error) {
+        console.error("Error getting content:", error);
+        
+        // Return page metadata if content cannot be retrieved
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                error: "Could not retrieve page content",
+                errorDetails: error.message,
+                page: {
+                  id: targetPage.id,
+                  title: targetPage.title,
+                  createdDateTime: targetPage.createdDateTime,
+                  lastModifiedDateTime: targetPage.lastModifiedDateTime,
+                  contentUrl: targetPage.contentUrl
+                }
+              }, null, 2)
+            }
+          ]
+        };
+      }
+    } catch (error) {
+      console.error("Error in getPage:", error);
+      return {
         content: [
           {
             type: "text",
-            text: JSON.stringify(response)
+            text: JSON.stringify({
+              error: true,
+              message: error.message,
+              stack: error.stack
+            }, null, 2)
           }
         ]
       };
-    } catch (error) {
-      console.error("Error getting page:", error);
-      throw new Error(`Failed to get page: ${error.message}`);
     }
   }
 );
@@ -413,15 +516,40 @@ server.tool(
   async (params) => {
     try {
       await ensureGraphClient();
+      
+      // Get all pages
       const response = await graphClient.api(`/me/onenote/pages`).get();
-      return { 
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify(response.value)
+      
+      // If search string is provided, filter the results
+      if (params.random_string && params.random_string.length > 0) {
+        const searchTerm = params.random_string.toLowerCase();
+        const filteredPages = response.value.filter(page => {
+          // Search in title
+          if (page.title && page.title.toLowerCase().includes(searchTerm)) {
+            return true;
           }
-        ]
-      };
+          return false;
+        });
+        
+        return { 
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(filteredPages)
+            }
+          ]
+        };
+      } else {
+        // Return all pages if no search term
+        return { 
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(response.value)
+            }
+          ]
+        };
+      }
     } catch (error) {
       console.error("Error searching pages:", error);
       throw new Error(`Failed to search pages: ${error.message}`);

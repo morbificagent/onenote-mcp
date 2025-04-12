@@ -10,7 +10,8 @@ This server allows AI assistants to:
 - Access your OneNote notebooks, sections, and pages
 - Create new pages in your notebooks
 - Search through your notes
-- Read note content
+- Read complete note content, including HTML formatting and text
+- Analyze and summarize your notes directly
 
 All of this happens directly through the AI interface without you having to switch contexts.
 
@@ -81,7 +82,8 @@ The first time you ask about OneNote, the AI will guide you through the authenti
 - Authentication with Microsoft OneNote using device code flow (no Azure setup needed)
 - List all notebooks, sections, and pages
 - Create new pages with HTML content
-- View note content
+- Read complete page content, including HTML formatting
+- Extract text content for AI analysis and summaries
 - Search across your notes
 
 ## Installation
@@ -158,7 +160,7 @@ Once authenticated, the following tools are available for AI assistants to use:
 | `getNotebook` | Get details of a specific notebook |
 | `listSections` | List all sections in a notebook |
 | `listPages` | List all pages in a section |
-| `getPage` | Get the content of a specific page |
+| `getPage` | Get the complete content of a specific page, including HTML formatting |
 | `createPage` | Create a new page with HTML content |
 | `searchPages` | Search for pages across your notebooks |
 
@@ -178,6 +180,15 @@ AI: (uses createPage) I've created a new page titled "2025-04-12" in your Projec
 
 User: Find all my notes about machine learning
 AI: (uses searchPages) I found 5 pages with content related to machine learning...
+
+User: Can you read and summarize my notes on the "Project Requirements" page?
+AI: (uses getPage) Based on your "Project Requirements" page, here's a summary: The project requires Python 3.8+, integration with AWS services, and completion by Q3. Key deliverables include a web dashboard, API, and documentation...
+
+User: Extract all the action items from my "Team Meeting" notes
+AI: (uses getPage) Here are all the action items from your "Team Meeting" notes:
+1. John to complete API documentation by Friday
+2. Sarah to schedule design review meeting
+3. Team to finalize Q3 roadmap by end of month
 ```
 
 ## Advanced: Direct Script Usage
