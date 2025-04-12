@@ -367,10 +367,10 @@ server.tool(
       console.error("Page ID:", targetPage.id);
       
       try {
-        // Use the proven approach from our simple script
         const url = `https://graph.microsoft.com/v1.0/me/onenote/pages/${targetPage.id}/content`;
         console.error("Fetching content from:", url);
         
+        // Make direct HTTP request with fetch
         const response = await fetch(url, {
           headers: {
             'Authorization': `Bearer ${accessToken}`
@@ -384,51 +384,24 @@ server.tool(
         const content = await response.text();
         console.error(`Content received! Length: ${content.length} characters`);
         
-        // Extract some useful text content using a simple regex
-        let textContent = content;
-        try {
-          // Remove HTML tags for a plain text version
-          textContent = content.replace(/<[^>]*>?/gm, ' ')
-                              .replace(/\s+/g, ' ')
-                              .trim();
-        } catch (parseError) {
-          console.error("Error parsing HTML:", parseError);
-        }
-        
-        // Return the page content with metadata - do NOT log or save the content
+        // Return the raw HTML content
         return {
           content: [
             {
               type: "text",
-              text: JSON.stringify({
-                id: targetPage.id,
-                title: targetPage.title,
-                createdDateTime: targetPage.createdDateTime,
-                lastModifiedDateTime: targetPage.lastModifiedDateTime,
-                content: content
-              }, null, 2)
+              text: content
             }
           ]
         };
       } catch (error) {
         console.error("Error getting content:", error);
         
-        // Return page metadata if content cannot be retrieved
+        // Return a simple error message
         return {
           content: [
             {
               type: "text",
-              text: JSON.stringify({
-                error: "Could not retrieve page content",
-                errorDetails: error.message,
-                page: {
-                  id: targetPage.id,
-                  title: targetPage.title,
-                  createdDateTime: targetPage.createdDateTime,
-                  lastModifiedDateTime: targetPage.lastModifiedDateTime,
-                  contentUrl: targetPage.contentUrl
-                }
-              }, null, 2)
+              text: `Error retrieving page content: ${error.message}`
             }
           ]
         };
@@ -439,11 +412,7 @@ server.tool(
         content: [
           {
             type: "text",
-            text: JSON.stringify({
-              error: true,
-              message: error.message,
-              stack: error.stack
-            }, null, 2)
+            text: `Error in getPage: ${error.message}`
           }
         ]
       };
