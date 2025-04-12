@@ -4,6 +4,27 @@ A Model Context Protocol (MCP) server implementation for Microsoft OneNote, enab
 
 > This project is based on [azure-onenote-mcp-server](https://github.com/ZubeidHendricks/azure-onenote-mcp-server) by Zubeid Hendricks, with modifications to simplify authentication and improve usability.
 
+## About the Project Structure
+
+This project requires the TypeScript SDK for the Model Context Protocol as a local dependency (`./typescript-sdk/`). Due to size constraints, the SDK is not included directly in this repository.
+
+### Downloading the TypeScript SDK
+
+Before using this project, you'll need to download the TypeScript SDK:
+
+```bash
+# After cloning this repo, download the MCP TypeScript SDK
+git clone https://github.com/modelcontextprotocol/typescript-sdk.git
+```
+
+This approach was chosen for a few reasons:
+
+1. **Compatibility:** The MCP specification is still evolving, and having the SDK directly available ensures compatibility.
+2. **Reliability:** Using the SDK as a local dependency prevents issues with version mismatches or breaking changes.
+3. **Functionality:** The current implementation relies on specific internal functions from the SDK that may not be available in all published versions.
+
+Without the local copy of the SDK, we encountered various compatibility and import issues that were difficult to resolve.
+
 ## Features
 
 - Authentication with Microsoft OneNote using device code flow
@@ -13,29 +34,105 @@ A Model Context Protocol (MCP) server implementation for Microsoft OneNote, enab
 - Create new pages with HTML content
 - View page content
 
-## Installation
+## Complete Setup Guide
 
 ### Prerequisites
 
-- Node.js 16 or higher
+- Node.js 16 or higher (install from [nodejs.org](https://nodejs.org/))
 - An active Microsoft account with access to OneNote
+- Git (install from [git-scm.com](https://git-scm.com/))
 
-### Installation Steps
+### Step 1: Clone the Repository
 
-1. Clone this repository:
+Open a terminal or command prompt and run:
 
 ```bash
 git clone https://github.com/yourusername/onenote-mcp.git
 cd onenote-mcp
 ```
 
-2. Install dependencies:
+### Step 2: Download the TypeScript SDK
+
+Clone the TypeScript SDK repository into the project folder:
+
+```bash
+git clone https://github.com/modelcontextprotocol/typescript-sdk.git
+cd typescript-sdk
+npm install
+npm run build
+cd ..
+```
+
+### Step 3: Install Project Dependencies
+
+In the main project directory, run:
 
 ```bash
 npm install
 ```
 
-## Authentication
+This will install all required packages including the Microsoft Graph client libraries.
+
+### Step 4: Authenticate with Microsoft
+
+Run the authentication script:
+
+```bash
+node authenticate.js
+```
+
+The script will output something like:
+```
+Starting authentication...
+You will see a URL and code to enter shortly...
+
+To sign in, use a web browser to open the page https://microsoft.com/devicelogin and enter the code ABCDEF123 to authenticate.
+```
+
+1. Open the URL (https://microsoft.com/devicelogin) in your web browser
+2. Enter the code displayed in your terminal (e.g., ABCDEF123)
+3. Sign in with your Microsoft account
+4. Grant the requested permissions to access your OneNote data
+5. Return to the terminal and wait for the "Authentication successful!" message
+
+After successful authentication, an access token will be saved to `.access-token.txt` in your project directory.
+
+### Step 5: Test Your Connection
+
+Verify that you can access your OneNote data by listing your notebooks:
+
+```bash
+node simple-onenote.js
+```
+
+You should see a list of your OneNote notebooks.
+
+### Step 6: Explore Your OneNote Data
+
+Now that you're authenticated, you can run the other scripts:
+
+```bash
+# List sections in your first notebook
+node list-sections.js
+
+# List pages in the first section of your first notebook
+node list-pages.js
+
+# Create a new page in the first section of your first notebook
+node create-page.js
+```
+
+### Step 7: Running the MCP Server (Optional)
+
+If you want to use the MCP server with AI assistants:
+
+```bash
+node onenote-mcp.mjs
+```
+
+This will start a server that AI systems can interact with using the Model Context Protocol.
+
+## Authentication Details
 
 This project uses Microsoft's Device Code authentication flow, which provides a secure way to authenticate without exposing your credentials in code.
 
@@ -52,56 +149,6 @@ This method is secure because:
 - The authentication happens directly with Microsoft
 - You don't need to create any Azure applications or API keys
 - The permissions are explicitly granted by you
-
-### How to Authenticate
-
-Run the authentication script:
-
-```bash
-node authenticate.js
-```
-
-The script will display a URL and a code. Open the URL in your browser and enter the code. After successful authentication, an access token will be saved locally in `.access-token.txt` and you're ready to use the OneNote MCP tools.
-
-## Usage
-
-### Running the MCP Server
-
-To start the MCP server:
-
-```bash
-node onenote-mcp.mjs
-```
-
-This will start a server that AI systems can interact with using the Model Context Protocol.
-
-### Example Scripts
-
-This repository contains several standalone scripts that demonstrate how to interact with OneNote:
-
-#### 1. List Your Notebooks
-
-```bash
-node simple-onenote.js
-```
-
-#### 2. List Sections in a Notebook
-
-```bash
-node list-sections.js
-```
-
-#### 3. List Pages in a Section
-
-```bash
-node list-pages.js
-```
-
-#### 4. Create a New Page
-
-```bash
-node create-page.js
-```
 
 ## Using with AI Assistants
 
@@ -124,13 +171,40 @@ You can use the provided scripts as templates to create your own custom OneNote 
 2. Creating a Graph client with the token
 3. Making API calls to the Microsoft Graph OneNote endpoints
 
+Example of how to read the token and initialize a client:
+
+```javascript
+// Read the access token
+const tokenData = fs.readFileSync('.access-token.txt', 'utf8');
+const parsedToken = JSON.parse(tokenData);
+const accessToken = parsedToken.token;
+
+// Create Microsoft Graph client
+const client = Client.init({
+  authProvider: (done) => {
+    done(null, accessToken);
+  }
+});
+
+// Now you can make API calls
+const notebooks = await client.api('/me/onenote/notebooks').get();
+```
+
 ## Security Notes
 
 - The authentication token is stored locally in `.access-token.txt` and grants access to your OneNote data
 - Always keep this token secure and don't commit it to public repositories
 - The included `.gitignore` is configured to exclude the token file
+- The token will expire after a period of time (usually 1 hour), requiring re-authentication
 
 ## Troubleshooting
+
+### TypeScript SDK Issues
+
+- If you encounter errors related to the TypeScript SDK, make sure you've:
+  - Cloned the repository into the correct location (`./typescript-sdk/`)
+  - Installed its dependencies (`cd typescript-sdk && npm install`)
+  - Built the SDK (`cd typescript-sdk && npm run build`)
 
 ### Authentication Issues
 
@@ -142,8 +216,10 @@ You can use the provided scripts as templates to create your own custom OneNote 
 ### Server Won't Start
 
 - Verify that Node.js is installed and is at least version 16
+  - Run `node --version` to check your version
 - Check that all dependencies are installed: `npm install`
 - Make sure that required modules are available: `npm install node-fetch`
+- If you see "SyntaxError: Cannot use import statement outside a module", make sure your package.json has `"type": "module"`
 
 ### API Rate Limits
 
