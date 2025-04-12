@@ -84,6 +84,8 @@ The first time you ask about OneNote, the AI will guide you through the authenti
 - Create new pages with HTML content
 - Read complete page content, including HTML formatting
 - Extract text content for AI analysis and summaries
+- Summarize content of all pages in a single operation
+- Read full content of all pages in a readable format
 - Search across your notes
 
 ## Installation
@@ -189,6 +191,16 @@ AI: (uses getPage) Here are all the action items from your "Team Meeting" notes:
 1. John to complete API documentation by Friday
 2. Sarah to schedule design review meeting
 3. Team to finalize Q3 roadmap by end of month
+
+User: Summarize content of all my OneNote pages
+AI: (runs get-all-page-contents.js) Here's a summary of all your pages:
+- Questions: Contains strategic business questions about competitor analysis
+- 2025-04-12: Discussion about monetization strategy for bank transfers
+- Role Specification: Details about the Chief Payments Officer position
+...
+
+User: I want to read through all my OneNote pages so I can ask questions about them
+AI: (runs read-all-pages.js) I've retrieved the full content of all your pages in a readable format. Now you can ask me specific questions about any of the content.
 ```
 
 ## Advanced: Direct Script Usage
@@ -210,6 +222,12 @@ npm run list-pages
 
 # Create a new page
 npm run create-page
+
+# Summarize content of all pages
+node get-all-page-contents.js
+
+# Read full content of all pages
+node read-all-pages.js
 ```
 
 ## Troubleshooting
