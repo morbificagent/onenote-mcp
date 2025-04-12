@@ -1,7 +1,8 @@
 # OneNote MCP Server
-[![smithery badge](https://smithery.ai/badge/@modelcontextprotocol/server-onenote)](https://smithery.ai/server/@modelcontextprotocol/server-onenote)
 
 A Model Context Protocol (MCP) server implementation for Microsoft OneNote, enabling AI language models to interact with OneNote through a standardized interface.
+
+> This project is based on [azure-onenote-mcp-server](https://github.com/ZubeidHendricks/azure-onenote-mcp-server) by Zubeid Hendricks, with modifications to simplify authentication and improve usability.
 
 ## Features
 
@@ -157,6 +158,10 @@ If you encounter errors about missing modules:
 - Make sure `package.json` has `"type": "module"` for ES modules
 - Run `npm install` to ensure all dependencies are installed
 - If specific modules are complained about, install them directly: `npm install <module-name>`
+
+## Credits
+
+This project builds upon the [azure-onenote-mcp-server](https://github.com/ZubeidHendricks/azure-onenote-mcp-server) by Zubeid Hendricks, with a focus on simplifying the authentication process and providing more straightforward examples.
 
 ## License
 
