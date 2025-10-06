@@ -20,6 +20,19 @@ const __dirname = path.dirname(__filename);
 // Path for storing the access token
 const tokenFilePath = path.join(__dirname, '.access-token.txt');
 
+function normalizeAccessToken(value) {
+  if (!value) return null;
+  let token = value.trim();
+  if (token.toLowerCase().startsWith('bearer ')) {
+    token = token.slice(7).trim();
+  }
+  return token;
+}
+
+function isLikelyJwt(token) {
+  return typeof token === 'string' && token.split('.').length === 3;
+}
+
 // Create the MCP server
 const server = new McpServer(
   { 
@@ -63,7 +76,11 @@ let graphClient = null;
 
 // Client ID for Microsoft Graph API access
 const clientId = '14d82eec-204b-4c2f-b7e8-296a70dab67e'; // Microsoft Graph Explorer client ID
-const scopes = ['Notes.Read.All', 'Notes.ReadWrite.All', 'User.Read'];
+const scopes = [
+  'https://graph.microsoft.com/Notes.Read',
+  'https://graph.microsoft.com/Notes.ReadWrite',
+  'https://graph.microsoft.com/User.Read'
+];
 
 // Function to ensure Graph client is created
 async function ensureGraphClient() {
@@ -80,19 +97,24 @@ async function ensureGraphClient() {
           // Fall back to using the raw token (old format)
           accessToken = tokenData;
         }
+        accessToken = normalizeAccessToken(accessToken);
       }
     } catch (error) {
       console.error("Error reading token file:", error);
     }
 
     if (!accessToken) {
-      throw new Error("Access token not found. Please save access token first.");
+      throw new Error("Access token not found. Please authenticate or save a valid access token.");
+    }
+
+    if (!isLikelyJwt(accessToken)) {
+      throw new Error("Invalid access token format. Please re-authenticate using the 'authenticate' tool or delete .access-token.txt and try again.");
     }
 
     // Create Microsoft Graph client
-    graphClient = Client.init({
-      authProvider: (done) => {
-        done(null, accessToken);
+    graphClient = Client.initWithMiddleware({
+      authProvider: {
+        getAccessToken: async () => accessToken
       }
     });
   }
@@ -154,24 +176,23 @@ server.tool(
     try {
       const result = await createGraphClient();
       if (result.type === 'device_code') {
-        return { 
+        return {
           content: [
             {
               type: "text",
-              text: "Authentication started. Please check the console for the URL and code."
-            }
-          ]
-        };
-      } else {
-        return { 
-          content: [
-            {
-              type: "text",
-              text: "Already authenticated with an access token."
+              text: "Authentication successful. Access token saved."
             }
           ]
         };
       }
+      return {
+        content: [
+          {
+            type: "text",
+            text: "Already authenticated with an access token."
+          }
+        ]
+      };
     } catch (error) {
       console.error("Error in authentication:", error);
       throw new Error(`Authentication failed: ${error.message}`);
@@ -186,7 +207,11 @@ server.tool(
   async (params) => {
     try {
       // Save the token for future use
-      accessToken = params.random_string;
+      const candidate = normalizeAccessToken(params.random_string);
+      if (!candidate || !isLikelyJwt(candidate)) {
+        throw new Error("Provided token is not a valid Microsoft Graph access token (JWT). Please use the 'authenticate' tool to obtain one.");
+      }
+      accessToken = candidate;
       const tokenData = JSON.stringify({ token: accessToken });
       fs.writeFileSync(tokenFilePath, tokenData);
       await createGraphClient();
